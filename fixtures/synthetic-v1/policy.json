@@ -1,0 +1,8 @@
+{
+  "policy_version": "synthetic-v1",
+  "method": "bm25",
+  "metric": "macro_recall",
+  "k": 3,
+  "absolute_tolerance": "0.05",
+  "note": "fixture-only tolerance; real tolerance and baseline approval are pending"
+}

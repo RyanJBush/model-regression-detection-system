@@ -1,0 +1,8 @@
+out/
+__pycache__/
+*.pyc
+.pytest_cache/
+review.diff
+gate-out*/
+summary-*.md
+ci-wiring.diff

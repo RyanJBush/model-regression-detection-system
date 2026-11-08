@@ -1,0 +1,19 @@
+[project]
+name = "mrds"
+version = "0.1.0"
+description = "Model Regression Detection System: local CLI gate over Retrieval Evaluation Harness run.json (schema 1.1)"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+mrds = "mrds.cli:main"
+
+[tool.setuptools]
+packages = ["mrds"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,54 @@
+# Required check: model-regression-gate
+#
+# Passes on exit 0 (pass). Fails on exit 1 (regression_detected) and exit 2 (comparison_invalid).
+# The report is published as a job summary (Markdown) and as an artifact (report.json + report.md) for all outcomes.
+#
+# Trust model
+#  * The gate code, approved baseline, policy and pinned SHA-256s are read from the PR BASE commit
+#    (trusted/), not from the PR head. The PR head (candidate-src/) supplies one data file only:
+#    candidate/run.json.
+#  * `pull_request`, not `pull_request_target`: no PR-controlled code runs with elevated token or secrets.
+#  * A PR can edit this workflow file itself, so enforce it with branch protection / rulesets and CODEOWNERS
+#    on .github/, ci/, mrds/ and fixtures/ (repository settings, not expressible in this file).
+#  * The 0.05 tolerance comes from the synthetic fixture policy (synthetic-v1) and is fixture-only.
+#
+# Bootstrap: the base commit must already contain ci/ and mrds/, so merge those files before relying on the check.
+name: model-regression-gate
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  model-regression-gate:
+    name: model-regression-gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted revision (PR base commit)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          persist-credentials: false
+
+      - name: Checkout candidate (PR head commit, data only)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate-src
+          persist-credentials: false
+
+      - name: Run gate (approved baseline and policy, pinned SHA-256; 0.05 is a synthetic fixture tolerance)
+        run: bash trusted/ci/run_gate.sh "$GITHUB_WORKSPACE/candidate-src/candidate/run.json" "$GITHUB_WORKSPACE/gate-out"
+
+      - name: Publish report.json and report.md
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: model-regression-report
+          path: gate-out/
+          if-no-files-found: error

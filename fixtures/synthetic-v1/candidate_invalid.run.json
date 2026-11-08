@@ -1,0 +1,541 @@
+{
+  "schema_version": "1.1",
+  "synthetic_fixture": {
+    "scenario": "candidate_invalid",
+    "generator": "tools/make_fixtures.py",
+    "field_reference": "retrieval-eval-harness@5daa6003131c1ce3e11a1673c976c24dac2c80c7 examples/demo/run.json",
+    "intended_ranking_change": "q01 result row omitted from results.bm25.queries while q01 stays in dataset.queries and dataset.judgments (saved aggregate would be q02 alone: 1.0).",
+    "warning": "hand-written rankings, not produced by running BM25"
+  },
+  "run": {
+    "run_id": "316567f150336f106936990f9697380b",
+    "status": "completed",
+    "started_utc": "2026-01-01T00:00:00+00:00",
+    "finished_utc": "2026-01-01T00:00:01+00:00",
+    "command": [
+      "python",
+      "tools/make_fixtures.py"
+    ]
+  },
+  "config": {
+    "dataset_dir": "synthetic-v1",
+    "ks": [
+      3
+    ],
+    "max_k": 3,
+    "warmup_per_query_method": 0,
+    "measured_per_query_method": 1,
+    "threads_requested": 1,
+    "device": "cpu",
+    "methods": [
+      "bm25"
+    ]
+  },
+  "policies": {
+    "metrics": "Recall@k and RR@k per query; macro Recall@k and MRR@k = arithmetic mean over queries with at least one judged-relevant document (same query set and denominator for every method).",
+    "no_judged_relevant": "metrics are null (JSON null / blank CSV), status 'no_judged_relevant'; excluded from macro means; counted in 'no_judged_relevant'. A null is never a zero.",
+    "empty_ranking_for_answerable_query": "scores 0 and stays in the macro denominator.",
+    "unjudged_documents": "contribute zero gain, keep their rank, labeled 'unjudged' (distinct from an explicit 0 judgment, labeled 'nonrelevant').",
+    "ranking_order": "score descending, then doc_id ascending (case-sensitive), applied to the full ranking before truncation to max_k. Scores are comparable only within one method.",
+    "ranking_consistency": "Every first-call, warm-up and measured search must return the same ORDERED document IDs as the untimed quality-pass ranking of that (method, query). A different ordered ID list makes the run incomplete (stage 'consistency', run_failed.json with the diagnostic, no run.json). If the IDs match but scores differ, the run may complete and the differences are reported separately.",
+    "json": "NaN/Infinity are rejected; absent values are null."
+  },
+  "environment": {
+    "python_version": "synthetic",
+    "platform": "synthetic"
+  },
+  "dependencies": {},
+  "code": {
+    "git": {
+      "available": false,
+      "reason": "synthetic fixture"
+    },
+    "source_fingerprint": {
+      "sha256": "ceed720c25307ef634993605df745debc786364e41c00285f721eeeaaed4fc9c",
+      "files": []
+    }
+  },
+  "adapters": {
+    "bm25": {
+      "name": "bm25",
+      "library": "rank-bm25",
+      "library_version": "0.2.2",
+      "variant": "BM25Okapi",
+      "k1": 1.5,
+      "b": 0.75,
+      "epsilon": 0.25,
+      "tokenizer_pattern": "[a-z0-9]+",
+      "tokenizer_normalization": "str.casefold() before matching",
+      "stemming": false,
+      "stop_words": null,
+      "n_documents": 13
+    }
+  },
+  "model": null,
+  "timing_protocol": {
+    "clock": "time.perf_counter_ns",
+    "unit": "ns",
+    "k_searched": 3,
+    "warmup_per_query_method": 0,
+    "measured_per_query_method": 1,
+    "query_order": [
+      "q01",
+      "q02",
+      "q08"
+    ]
+  },
+  "ranking_consistency": {
+    "rule": "Every first-call, warm-up and measured search must return the same ORDERED document IDs as the untimed quality-pass ranking of that (method, query). A different ordered ID list makes the run incomplete (stage 'consistency', run_failed.json with the diagnostic, no run.json). If the IDs match but scores differ, the run may complete and the differences are reported separately.",
+    "calls_checked": 2,
+    "ranking_disagreements": 0,
+    "score_only_differences": 0,
+    "max_abs_score_difference": 0.0
+  },
+  "setup_observations": {
+    "bm25": {
+      "bm25_index_build_ns": 1000000
+    }
+  },
+  "first_call_observations": [],
+  "dataset": {
+    "designation": "synthetic",
+    "synthetic_developer_fixture": true,
+    "directory": "synthetic-v1 (generated)",
+    "files": [
+      {
+        "name": "documents.jsonl",
+        "sha256": "0957ce408e33e5b5806d52137bbd07b4fbf5a3b6733204748671ea0602999d66",
+        "bytes": 689
+      },
+      {
+        "name": "queries.jsonl",
+        "sha256": "939e369cbcc0f14bd7cf23abcb08df2b49b69dd3a80a4f99b67ada0c0bbf7a8d",
+        "bytes": 156
+      },
+      {
+        "name": "qrels.csv",
+        "sha256": "0435cd2126ffb21286e87a8cf6c54dba089fda7adc94d0595a41468ed24fd231",
+        "bytes": 416
+      }
+    ],
+    "fixture_manifest": {
+      "name": "FIXTURE.sha256",
+      "present": false,
+      "verified": false
+    },
+    "counts": {
+      "documents": 13,
+      "queries": 3,
+      "judgments": 39,
+      "positive_judgments": 11,
+      "queries_without_relevant": 1
+    },
+    "documents": [
+      {
+        "doc_id": "d01",
+        "text": "Synthetic document d01."
+      },
+      {
+        "doc_id": "d02",
+        "text": "Synthetic document d02."
+      },
+      {
+        "doc_id": "d03",
+        "text": "Synthetic document d03."
+      },
+      {
+        "doc_id": "d04",
+        "text": "Synthetic document d04."
+      },
+      {
+        "doc_id": "d05",
+        "text": "Synthetic document d05."
+      },
+      {
+        "doc_id": "d06",
+        "text": "Synthetic document d06."
+      },
+      {
+        "doc_id": "d07",
+        "text": "Synthetic document d07."
+      },
+      {
+        "doc_id": "d08",
+        "text": "Synthetic document d08."
+      },
+      {
+        "doc_id": "d09",
+        "text": "Synthetic document d09."
+      },
+      {
+        "doc_id": "d10",
+        "text": "Synthetic document d10."
+      },
+      {
+        "doc_id": "d11",
+        "text": "Synthetic document d11."
+      },
+      {
+        "doc_id": "d12",
+        "text": "Synthetic document d12."
+      },
+      {
+        "doc_id": "d13",
+        "text": "Synthetic document d13."
+      }
+    ],
+    "queries": [
+      {
+        "query_id": "q01",
+        "text": "Synthetic query q01."
+      },
+      {
+        "query_id": "q02",
+        "text": "Synthetic query q02."
+      },
+      {
+        "query_id": "q08",
+        "text": "Synthetic query q08."
+      }
+    ],
+    "judgments": [
+      [
+        "q01",
+        "d01",
+        1
+      ],
+      [
+        "q01",
+        "d02",
+        1
+      ],
+      [
+        "q01",
+        "d03",
+        1
+      ],
+      [
+        "q01",
+        "d04",
+        1
+      ],
+      [
+        "q01",
+        "d05",
+        1
+      ],
+      [
+        "q01",
+        "d06",
+        1
+      ],
+      [
+        "q01",
+        "d07",
+        1
+      ],
+      [
+        "q01",
+        "d08",
+        1
+      ],
+      [
+        "q01",
+        "d09",
+        1
+      ],
+      [
+        "q01",
+        "d10",
+        1
+      ],
+      [
+        "q01",
+        "d11",
+        0
+      ],
+      [
+        "q01",
+        "d12",
+        0
+      ],
+      [
+        "q01",
+        "d13",
+        0
+      ],
+      [
+        "q02",
+        "d01",
+        0
+      ],
+      [
+        "q02",
+        "d02",
+        0
+      ],
+      [
+        "q02",
+        "d03",
+        0
+      ],
+      [
+        "q02",
+        "d04",
+        0
+      ],
+      [
+        "q02",
+        "d05",
+        0
+      ],
+      [
+        "q02",
+        "d06",
+        0
+      ],
+      [
+        "q02",
+        "d07",
+        0
+      ],
+      [
+        "q02",
+        "d08",
+        0
+      ],
+      [
+        "q02",
+        "d09",
+        0
+      ],
+      [
+        "q02",
+        "d10",
+        0
+      ],
+      [
+        "q02",
+        "d11",
+        1
+      ],
+      [
+        "q02",
+        "d12",
+        0
+      ],
+      [
+        "q02",
+        "d13",
+        0
+      ],
+      [
+        "q08",
+        "d01",
+        0
+      ],
+      [
+        "q08",
+        "d02",
+        0
+      ],
+      [
+        "q08",
+        "d03",
+        0
+      ],
+      [
+        "q08",
+        "d04",
+        0
+      ],
+      [
+        "q08",
+        "d05",
+        0
+      ],
+      [
+        "q08",
+        "d06",
+        0
+      ],
+      [
+        "q08",
+        "d07",
+        0
+      ],
+      [
+        "q08",
+        "d08",
+        0
+      ],
+      [
+        "q08",
+        "d09",
+        0
+      ],
+      [
+        "q08",
+        "d10",
+        0
+      ],
+      [
+        "q08",
+        "d11",
+        0
+      ],
+      [
+        "q08",
+        "d12",
+        0
+      ],
+      [
+        "q08",
+        "d13",
+        0
+      ]
+    ]
+  },
+  "latency": {
+    "unit": "ns",
+    "samples": [
+      {
+        "method": "bm25",
+        "query_id": "q02",
+        "repetition": 1,
+        "execution_index": 1,
+        "position_in_pair": 1,
+        "elapsed_ns": 131000
+      },
+      {
+        "method": "bm25",
+        "query_id": "q08",
+        "repetition": 1,
+        "execution_index": 2,
+        "position_in_pair": 1,
+        "elapsed_ns": 132000
+      }
+    ],
+    "warmup_samples": [],
+    "summary": {
+      "bm25": {
+        "overall": {
+          "n": 2,
+          "median_ns": 132000.0,
+          "min_ns": 131000,
+          "max_ns": 132000,
+          "p95_ns": 132000.0
+        },
+        "per_query": {
+          "q02": {
+            "n": 1,
+            "median_ns": 131000.0,
+            "min_ns": 131000,
+            "max_ns": 131000
+          },
+          "q08": {
+            "n": 1,
+            "median_ns": 132000.0,
+            "min_ns": 132000,
+            "max_ns": 132000
+          }
+        }
+      }
+    }
+  },
+  "results": {
+    "bm25": {
+      "counts": {
+        "total": 2,
+        "scored": 1,
+        "no_judged_relevant": 1
+      },
+      "aggregate": {
+        "3": {
+          "macro_recall": 1.0,
+          "mrr": 1.0
+        }
+      },
+      "queries": [
+        {
+          "query_id": "q02",
+          "status": "scored",
+          "n_relevant": 1,
+          "n_returned": 3,
+          "metrics": {
+            "3": {
+              "recall": 1.0,
+              "rr": 1.0
+            }
+          },
+          "ranking": [
+            {
+              "rank": 1,
+              "doc_id": "d11",
+              "score": 3.0,
+              "label": "relevant"
+            },
+            {
+              "rank": 2,
+              "doc_id": "d12",
+              "score": 2.0,
+              "label": "nonrelevant"
+            },
+            {
+              "rank": 3,
+              "doc_id": "d13",
+              "score": 1.0,
+              "label": "nonrelevant"
+            }
+          ],
+          "measured_search_consistency": {
+            "n_measured": 1,
+            "n_identical_to_quality_pass": 1,
+            "n_ranking_identical": 1,
+            "n_score_differs_same_ranking": 0,
+            "max_abs_score_difference": 0.0
+          }
+        },
+        {
+          "query_id": "q08",
+          "status": "no_judged_relevant",
+          "n_relevant": 0,
+          "n_returned": 3,
+          "metrics": {
+            "3": {
+              "recall": null,
+              "rr": null
+            }
+          },
+          "ranking": [
+            {
+              "rank": 1,
+              "doc_id": "d01",
+              "score": 3.0,
+              "label": "nonrelevant"
+            },
+            {
+              "rank": 2,
+              "doc_id": "d02",
+              "score": 2.0,
+              "label": "nonrelevant"
+            },
+            {
+              "rank": 3,
+              "doc_id": "d03",
+              "score": 1.0,
+              "label": "nonrelevant"
+            }
+          ],
+          "measured_search_consistency": {
+            "n_measured": 1,
+            "n_identical_to_quality_pass": 1,
+            "n_ranking_identical": 1,
+            "n_score_differs_same_ranking": 0,
+            "max_abs_score_difference": 0.0
+          }
+        }
+      ]
+    }
+  }
+}
