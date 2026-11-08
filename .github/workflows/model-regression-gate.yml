@@ -43,6 +43,10 @@ jobs:
           persist-credentials: false
 
       - name: Run gate (approved baseline and policy, pinned SHA-256; 0.05 is a synthetic fixture tolerance)
+        env:
+          MRDS_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MRDS_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MRDS_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: bash trusted/ci/run_gate.sh "$GITHUB_WORKSPACE/candidate-src/candidate/run.json" "$GITHUB_WORKSPACE/gate-out"
 
       - name: Publish report.json and report.md

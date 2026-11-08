@@ -11,6 +11,7 @@ from pathlib import Path, PurePath
 
 from . import __version__
 from .errors import EXIT_CODES, INVALID, Issue
+from .mdsafe import code_span as cs, plain
 
 REPORT_VERSION = "1.0"
 _Q = Decimal("0.000001")
@@ -25,10 +26,21 @@ def posix(path) -> str:
     return PurePath(path).as_posix()
 
 
+def display_path(path) -> str:
+    """Path as shown in reports: relative to the current directory when inside it, so the command is portable."""
+    p = Path(path)
+    if p.is_absolute():
+        try:
+            return p.resolve().relative_to(Path.cwd().resolve()).as_posix()
+        except (ValueError, OSError):
+            pass
+    return posix(path)
+
+
 def reproduction_command(baseline, candidate, policy_path, out_dir, declared: dict, top_n: int,
                          baseline_sha256=None, policy_sha256=None) -> str:
-    parts = ["python", "-m", "mrds", "--baseline", posix(baseline), "--candidate", posix(candidate),
-             "--policy", posix(policy_path), "--out-dir", posix(out_dir)]
+    parts = ["python", "-m", "mrds", "--baseline", display_path(baseline), "--candidate", display_path(candidate),
+             "--policy", display_path(policy_path), "--out-dir", display_path(out_dir)]
     if baseline_sha256:
         parts += ["--baseline-sha256", baseline_sha256]
     if policy_sha256:
@@ -48,7 +60,7 @@ def identity(path, sha256, doc, pinned_sha256=None) -> dict:
         return obj
 
     return {
-        "path": posix(path),
+        "path": display_path(path),
         "file_sha256": sha256,
         "pinned_sha256": pinned_sha256,
         "sha256_verified": (sha256 == pinned_sha256) if pinned_sha256 else None,
@@ -128,40 +140,44 @@ def _v(f: dict) -> str:
 
 
 def to_markdown(r: dict) -> str:
+    # `decision`, `exit_code`, error codes and sides are tool constants. Everything that can come from a run.json is
+    # passed through code_span()/plain(); see mdsafe.py.
     L = [f"# Model regression report: `{r['decision']}`", "",
          f"- **Decision:** `{r['decision']}` (exit code {r['exit_code']})",
-         f"- **Reason:** {r['reason']}", ""]
+         f"- **Reason:** {cs(r['reason']) if r['decision'] == INVALID else plain(r['reason'])}", ""]
     p = r["policy"]
     L += ["## Policy", ""]
     if p.get("loaded") is False:
-        L += [f"Policy file `{p['path']}` could not be loaded.", ""]
+        L += [f"Policy file {cs(p['path'])} could not be loaded.", ""]
     else:
-        L += [f"- version `{p['policy_version']}`, method `{p['method']}`, metric `{p['metric']}`, k={p['k']}, "
-              f"absolute tolerance `{p['absolute_tolerance']}`", f"- policy file sha256 `{p['sha256']}`"]
+        L += [f"- version {cs(p['policy_version'])}, method {cs(p['method'])}, metric {cs(p['metric'])}, k={p['k']}, "
+              f"absolute tolerance {cs(p['absolute_tolerance'])}", f"- policy file sha256 {cs(p['sha256'])}"]
         if p.get("note"):
-            L.append(f"- note: {p['note']}")
+            L.append(f"- note: {plain(p['note'])}")
         L.append("")
     L += ["## Compared runs", "", "| side | run_id | file | file sha256 | code fingerprint sha256 | git |",
           "|---|---|---|---|---|---|"]
     for side in ("baseline", "candidate"):
         i = r["inputs"][side]
-        L.append(f"| {side} | `{i['run_id']}` | `{i['path']}` | `{i['file_sha256']}` | "
-                 f"`{i['code']['source_fingerprint_sha256']}` | `{json.dumps(i['code']['git'])}` |")
+        L.append(f"| {side} | {cs(i['run_id'], True)} | {cs(i['path'], True)} | {cs(i['file_sha256'], True)} | "
+                 f"{cs(i['code']['source_fingerprint_sha256'], True)} | "
+                 f"{cs(json.dumps(i['code']['git'], sort_keys=True), True)} |")
     L.append("")
     pin = r["inputs"]["baseline"]
     if pin["pinned_sha256"]:
-        L += [f"- baseline sha256 pinned to `{pin['pinned_sha256']}`: "
+        L += [f"- baseline sha256 pinned to {cs(pin['pinned_sha256'])}: "
               f"{'verified' if pin['sha256_verified'] else '**MISMATCH**'}", ""]
     else:
         L += ["- baseline sha256 is not pinned", ""]
     if r["declared_changes"]:
         L += ["## Declared retriever-setting changes", "", "| field | baseline | candidate | reason |", "|---|---|---|---|"]
         for c in r["declared_changes"]:
-            L.append(f"| `{c['field']}` | `{c['baseline']}` | `{c['candidate']}` | {c['reason']} |")
+            L.append(f"| {cs(c['field'], True)} | {cs(c['baseline'], True)} | {cs(c['candidate'], True)} | "
+                     f"{plain(c['reason'])} |")
         L.append("")
     if r["decision"] == INVALID:
         L += ["## Errors", "", "No gate aggregate was computed.", ""]
-        L += [f"- `{e['code']}` ({e['side']}): {e['message']}" for e in r["errors"]]
+        L += [f"- `{e['code']}` ({e['side']}): {cs(e['message'])}" for e in r["errors"]]
         L.append("")
     else:
         c, a = r["counts"], r["aggregate"]
@@ -172,18 +188,19 @@ def to_markdown(r: dict) -> str:
         L += ["## Largest drops", ""]
         if r["largest_drops"]:
             L += ["| query | baseline | candidate | delta |", "|---|---|---|---|"]
-            L += [f"| {d['query_id']} | {_v(d['baseline'])} | {_v(d['candidate'])} | {_v(d['delta'])} |"
+            L += [f"| {cs(d['query_id'], True)} | {_v(d['baseline'])} | {_v(d['candidate'])} | {_v(d['delta'])} |"
                   for d in r["largest_drops"]]
         else:
             L.append("No query dropped.")
         L += ["", "## Per-query deltas (scored)", "", "| query | baseline | candidate | delta |", "|---|---|---|---|"]
-        L += [f"| {d['query_id']} | {_v(d['baseline'])} | {_v(d['candidate'])} | {_v(d['delta'])} |"
+        L += [f"| {cs(d['query_id'], True)} | {_v(d['baseline'])} | {_v(d['candidate'])} | {_v(d['delta'])} |"
               for d in r["per_query"]]
         L += ["", "## Unscored queries (excluded from both means)", ""]
-        L += ([f"- {u['query_id']}: status `{u['status']}`, recall null on both sides" for u in r["unscored_queries"]]
-              or ["None."])
+        L += ([f"- {cs(u['query_id'])}: status {cs(u['status'])}, recall null on both sides"
+               for u in r["unscored_queries"]] or ["None."])
         lat = r["informational"]["bm25_overall_latency"]
-        L += ["", "## Informational", "", f"- bm25 overall latency (not used in the decision): `{json.dumps(lat)}`"]
+        L += ["", "## Informational", "",
+              f"- bm25 overall latency (not used in the decision): {cs(json.dumps(lat, sort_keys=True))}"]
         L.append("")
     L += ["## Reproduce", "", "```bash", r["reproduction_command"], "```", ""]
     return "\n".join(L)

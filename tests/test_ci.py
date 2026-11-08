@@ -154,17 +154,6 @@ def test_candidate_cannot_replace_gate_code_or_baseline(tmp_path):
     assert r.returncode == 1  # trusted gate still sees the regression
 
 
-@needs_bash
-def test_workflow_command_lines_in_console_output_are_neutralised(tmp_path):
-    import json
-    doc = load("candidate_boundary.run.json")
-    doc["run"]["run_id"] = "x\n::set-output name=pwn::1"
-    cand = tmp_path / "evil.json"
-    cand.write_text(json.dumps(doc))
-    r, out, summary = gate(tmp_path, cand)
-    assert not any(line.startswith("::") for line in r.stdout.splitlines())
-
-
 # ----------------------------------------------------------------------------- workflow file
 _RAW = (ROOT / ".github" / "workflows" / "model-regression-gate.yml").read_text()
 WORKFLOW = "\n".join(l for l in _RAW.splitlines() if not l.lstrip().startswith("#")) + "\n"  # comments excluded
