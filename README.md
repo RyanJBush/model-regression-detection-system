@@ -27,8 +27,9 @@ Recall@3(query) = (relevant document IDs within ranks 1-3) / (all judged-relevan
 - **Macro recall** is the mean of Recall@3 over scored queries. The gate averages the **paired** per-query
   deltas (candidate minus baseline), paired by query ID.
 
-All arithmetic is exact (Python `Fraction`), so `0.65 - 0.60` is exactly `1/20`. In binary floating point
-`0.6 - 0.65` is `-0.050000000000000044`, which is strictly below `-0.05` and would wrongly block the boundary case.
+All arithmetic is exact (Python `Fraction`), so candidate minus baseline, `0.60 - 0.65`, is exactly `-1/20`. In
+binary floating point the same subtraction gives `-0.050000000000000044`, which is strictly below `-0.05` and would
+wrongly block the boundary case.
 
 ## The three decisions
 
@@ -62,7 +63,7 @@ Baseline macro recall = (3/10 + 1) / 2 = **13/20 = 0.65**. `q08` is excluded.
 Candidate `q01` top 3 is `d01, d02, d12`. `d12` is not relevant, so q01 drops from 3/10 to **2/10**; q02 is unchanged.
 
 - Candidate macro recall = (2/10 + 1) / 2 = 3/5 = **0.60**
-- Mean delta = 3/5 - 13/20 = **-1/20 = -0.05**
+- Mean delta (candidate minus baseline) = 0.60 - 0.65 = 3/5 - 13/20 = **-1/20 = -0.05**
 - The rule blocks only when the delta is **strictly below** `-0.05`. `-0.05` is not below `-0.05`, so the decision is
   `pass`.
 
@@ -73,15 +74,20 @@ The single-query drop is larger (q01 is down 0.10), but the mean is over the two
 Candidate `q01` top 3 is `d01, d12, d13`, so q01 drops from 3/10 to **1/10**; q02 is unchanged.
 
 - Candidate macro recall = (1/10 + 1) / 2 = 11/20 = **0.55**
-- Mean delta = 11/20 - 13/20 = **-1/10 = -0.10**, which is strictly below `-0.05`, so the decision is
+- Mean delta (candidate minus baseline) = 0.55 - 0.65 = 11/20 - 13/20 = **-1/10 = -0.10**, which is strictly below `-0.05`, so the decision is
   `regression_detected`.
 - Largest drop: **q01, -0.20** (3/10 to 1/10).
 
 ### Why missing q01 invalidated the third comparison (exit 2)
 
 The invalid candidate still lists `q01` in `dataset.queries` and `dataset.judgments`, but its
-`results.bm25.queries` has **no row for q01**. Its saved aggregate covers `q02` alone and equals `1.0`, so averaging
-what is left would hide a real drop on q01.
+`results.bm25.queries` has **no row for q01**. `q01` is a **scored** query (10 judged-relevant documents), and without
+its row the candidate's Recall@3 for it is **unknown**.
+
+Omitting it would **inflate the mean**: the candidate's saved aggregate covers `q02` alone and equals `1.0`, compared
+with the baseline's 0.65. That looks like a +0.35 improvement, but it only appears because a scored query whose
+candidate recall is unknown was dropped from the average. It could just as well have been a drop on `q01`, as in the
+regression case. A paired delta for `q01` cannot be computed, so no honest mean exists.
 
 Validation therefore rejects the pair with `missing_result: no result row for dataset query 'q01'` **before
 aggregating**. The report has `decision: comparison_invalid`, exit 2, and no aggregate, deltas or counts.
