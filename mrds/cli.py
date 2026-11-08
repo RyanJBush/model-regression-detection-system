@@ -12,6 +12,7 @@ import sys
 
 from . import gate, report as rpt
 from .errors import EXIT_CODES, INVALID, Issue
+from .mdsafe import visible
 from .policy import load_policy
 from .validate import check_pair, check_run, load_run_file
 
@@ -42,6 +43,10 @@ def build_parser():
                    help="pinned SHA-256 of the approved baseline file; a mismatch is comparison_invalid")
     p.add_argument("--policy-sha256", type=_sha256_arg, metavar="HEX",
                    help="pinned SHA-256 of the approved policy file; a mismatch is comparison_invalid")
+    p.add_argument("--repro-candidate", metavar="PATH",
+                   help="display-only: candidate path shown in the reproduction command (default: --candidate)")
+    p.add_argument("--repro-out-dir", metavar="PATH",
+                   help="display-only: output path shown in the reproduction command (default: --out-dir)")
     return p
 
 
@@ -51,10 +56,15 @@ def _sha256_arg(value):
     return value
 
 
+def _repro(args, declared) -> str:
+    return rpt.reproduction_command(args.baseline, args.repro_candidate or args.candidate, args.policy,
+                                    args.repro_out_dir or args.out_dir, declared, args.top, args.baseline_sha256,
+                                    args.policy_sha256)
+
+
 def analyse(args, declared) -> dict:
     """Validate, then (only if valid) decide. Returns the report dict."""
-    repro = rpt.reproduction_command(args.baseline, args.candidate, args.policy, args.out_dir, declared, args.top,
-                                     args.baseline_sha256, args.policy_sha256)
+    repro = _repro(args, declared)
     policy, issues = load_policy(args.policy)
     if policy is not None and args.policy_sha256 and policy.sha256 != args.policy_sha256:
         issues.append(Issue("policy_hash_mismatch", "policy", f"policy file sha256 {policy.sha256} != pinned "
@@ -104,8 +114,7 @@ def main(argv=None) -> int:
         report = rpt.build(
             policy=None, policy_path=args.policy, baseline_id=rpt.identity(args.baseline, None, None),
             candidate_id=rpt.identity(args.candidate, None, None), issues=[issue], result=None, declared_records=[],
-            repro=rpt.reproduction_command(args.baseline, args.candidate, args.policy, args.out_dir, declared,
-                                           args.top, args.baseline_sha256, args.policy_sha256),
+            repro=_repro(args, declared),
             latency=None,
         )
     try:
@@ -114,9 +123,10 @@ def main(argv=None) -> int:
         print(f"mrds: cannot write reports to {args.out_dir}: {exc}", file=sys.stderr)
         return 2
     code = EXIT_CODES[report["decision"]]
-    print(f"decision={report['decision']} exit_code={code} reason={report['reason']}")
+    # candidate-derived text is made inert (no control characters, no line breaks) before it reaches a terminal or log
+    print(f"decision={report['decision']} exit_code={code} reason={visible(report['reason'])}")
     for e in report["errors"]:
-        print(f"  error[{e['code']}] {e['side']}: {e['message']}")
+        print(f"  error[{e['code']}] {e['side']}: {visible(e['message'])}")
     print(f"reports: {rpt.posix(args.out_dir)}/report.json, {rpt.posix(args.out_dir)}/report.md")
     return code
 

@@ -70,7 +70,7 @@ def test_markdown_report_matches_json(tmp_path):
     main(["--baseline", str(FIX / "baseline.run.json"), "--candidate", str(FIX / "candidate_regression.run.json"),
           "--policy", str(FIX / "policy.json"), "--out-dir", str(out)])
     md = (out / "report.md").read_text(encoding="utf-8")
-    for needle in ("regression_detected", "Largest drops", "| q01 |", "-1/5 (-0.200000)", "q08", "python -m mrds"):
+    for needle in ("regression_detected", "Largest drops", "| `q01` |", "-1/5 (-0.200000)", "q08", "python -m mrds"):
         assert needle in md
 
 
