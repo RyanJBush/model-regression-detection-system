@@ -3,6 +3,7 @@
 # Run from a clean clone AFTER main contains the bootstrap commit (see docs/hosted-demo.md).
 # Does not merge anything and does not touch branch protection.
 set -euo pipefail
+export MSYS2_ARG_CONV_EXCL='*'   # Git Bash on Windows would otherwise rewrite "origin/main:path" arguments
 base="${BASE:-main}"
 
 git fetch -q origin "$base"
